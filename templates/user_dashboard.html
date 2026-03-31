@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+</head>
+<body>
+
+<h2>Welcome {{ session['user'] }}</h2>
+
+<a href="/logout">Logout</a>
+
+<hr>
+
+<h3>Upload Crop Image</h3>
+
+<form method="POST" action="/upload" enctype="multipart/form-data">
+    <input type="file" name="image" required>
+    <button type="submit">Predict Disease</button>
+</form>
+
+</body>
+</html>

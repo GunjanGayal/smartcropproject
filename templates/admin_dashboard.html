@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        h2, h3 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            background: white;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px;
+        }
+
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        img {
+            border-radius: 5px;
+        }
+
+        a {
+            text-decoration: none;
+            color: blue;
+        }
+
+        a:hover {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Admin Dashboard</h2>
+
+<!-- ================= USERS TABLE ================= -->
+<h3>Registered Users</h3>
+
+<form method="POST" action="/admin/delete_multiple_users">
+
+<table>
+<tr>
+  <th>Select</th>
+  <th>ID</th>
+  <th>Username</th>
+  <th>Password</th>
+  <th>Action</th>
+</tr>
+
+{% for user in users %}
+<tr>
+  <td><input type="checkbox" name="user_ids" value="{{ user.id }}"></td>
+  <td>{{ user.id }}</td>
+  <td>{{ user.username }}</td>
+  <td>********</td>
+  <td>
+    <a href="/admin/edit_user/{{ user.id }}">Edit</a> |
+    <a href="/admin/delete_user/{{ user.id }}" onclick="return confirm('Are you sure?')">Delete</a>
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+<br>
+<div style="text-align:center;">
+    <button type="submit" onclick="return confirm('Delete selected users?')">
+        Delete Selected Users
+    </button>
+</div>
+
+</form>
+
+<!-- ================= UPLOADS TABLE ================= -->
+
+<h3>Uploaded Crop Details</h3>
+
+<form method="POST" action="/admin/delete_multiple_uploads">
+
+<table>
+<tr>
+  <th>Select</th>
+  <th>Username</th>
+  <th>Image</th>
+  <th>Crop</th>
+  <th>Disease</th>
+  <th>Confidence</th>
+  <th>Date</th>
+</tr>
+
+{% for u in uploads %}
+<tr>
+
+  <td>
+    <input type="checkbox" name="upload_ids" value="{{ u.id }}">
+  </td>
+
+  <td>{{ u.username }}</td>
+
+  <td>
+    <img src="{{ url_for('static', filename='uploads/' + u.filename) }}" width="80"><br>
+    <a href="/admin/delete_upload/{{ u.id }}" onclick="return confirm('Delete this image?')">Delete</a>
+  </td>
+
+  <td>{{ u.crop }}</td>
+  <td>{{ u.disease }}</td>
+  <td>{{ u.confidence }}%</td>
+  <td>{{ u.timestamp }}</td>
+
+</tr>
+{% endfor %}
+</table>
+
+<br>
+<div style="text-align:center;">
+    <button type="submit" onclick="return confirm('Delete selected uploads?')">
+        Delete Selected Uploads
+    </button>
+</div>
+
+</form>
+
+</body>
+</html>
