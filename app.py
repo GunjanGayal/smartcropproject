@@ -142,8 +142,7 @@ def register():
 
 # Admin Login
 
-# Admin Login
-# --------- ADMIN SECTION (Working) ---------
+
 
 # Main Admin Login (works with /admin)
 @app.route("/admin", methods=["GET","POST"])
