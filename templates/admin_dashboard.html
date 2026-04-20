@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Admin Dashboard</title>
+
     <style>
         body {
             font-family: Arial;
@@ -16,8 +17,8 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 30px;
             background: white;
+            margin-bottom: 30px;
         }
 
         table, th, td {
@@ -35,13 +36,9 @@
             text-align: center;
         }
 
-        img {
-            border-radius: 5px;
-        }
-
         a {
-            text-decoration: none;
             color: blue;
+            text-decoration: none;
         }
 
         a:hover {
@@ -49,11 +46,12 @@
         }
     </style>
 </head>
+
 <body>
 
 <h2>Admin Dashboard</h2>
 
-<!-- ================= USERS TABLE ================= -->
+<!-- ================= USERS ================= -->
 <h3>Registered Users</h3>
 
 <form method="POST" action="/admin/delete_multiple_users">
@@ -75,13 +73,15 @@
   <td>********</td>
   <td>
     <a href="/admin/edit_user/{{ user.id }}">Edit</a> |
-    <a href="/admin/delete_user/{{ user.id }}" onclick="return confirm('Are you sure?')">Delete</a>
+    <a href="/admin/delete_user/{{ user.id }}">Delete</a>
   </td>
 </tr>
 {% endfor %}
+
 </table>
 
 <br>
+
 <div style="text-align:center;">
     <button type="submit" onclick="return confirm('Delete selected users?')">
         Delete Selected Users
@@ -90,13 +90,13 @@
 
 </form>
 
-<!-- ================= UPLOADS TABLE ================= -->
-
+<!-- ================= UPLOADS ================= -->
 <h3>Uploaded Crop Details</h3>
 
 <form method="POST" action="/admin/delete_multiple_uploads">
 
 <table>
+
 <tr>
   <th>Select</th>
   <th>Username</th>
@@ -104,10 +104,11 @@
   <th>Crop</th>
   <th>Disease</th>
   <th>Confidence</th>
-  <th>Date</th>
+  <th>Action</th>
 </tr>
 
 {% for u in uploads %}
+
 <tr>
 
   <td>
@@ -117,20 +118,29 @@
   <td>{{ u.username }}</td>
 
   <td>
-    <img src="{{ url_for('static', filename='uploads/' + u.filename) }}" width="80"><br>
-    <a href="/admin/delete_upload/{{ u.id }}" onclick="return confirm('Delete this image?')">Delete</a>
+    <img src="{{ url_for('static', filename='uploads/' + u.filename) }}" width="70">
   </td>
 
   <td>{{ u.crop }}</td>
+
   <td>{{ u.disease }}</td>
+
   <td>{{ u.confidence }}%</td>
-  <td>{{ u.timestamp }}</td>
+
+  <td>
+    <a href="/admin/delete_upload/{{ u.id }}" onclick="return confirm('Delete?')">
+        Delete
+    </a>
+  </td>
 
 </tr>
+
 {% endfor %}
+
 </table>
 
 <br>
+
 <div style="text-align:center;">
     <button type="submit" onclick="return confirm('Delete selected uploads?')">
         Delete Selected Uploads

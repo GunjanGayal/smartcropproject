@@ -4,6 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+     <style>
+        body {
+           background-image: url("https://static.vecteezy.com/system/resources/previews/070/683/468/large_2x/precision-agriculture-field-monitoring-with-technology-overlay-displaying-smart-farming-solutions-for-sustainable-crop-management-and-yield-photo.jpeg");
+        background-size: cover;
+        }
+        h2{
+            font-size: 50px;
+            color: black;
+        }
+        button{
+            font-size: 20px;
+        }
+        input{
+            font-size: 18px;
+        }
+    
+.username, .password {
+    font-size: 30px;   
+    font-weight: bold; 
+}
+    
+</style>
+    
+
 </head>
 <body>
     
@@ -11,17 +35,16 @@
 
 <form method="post">
 
-Username
-
+<label class="username">Username</label>
 <input type="text" name="username" required>
 
-Password
-
+<label class="password">Password</label>
 <input type="password" name="password" required>
 
 <button type="submit">Register</button>
 <a href="/logout">Back to Home</a>
 
+</form>
 </form>
 </body>
 </html>

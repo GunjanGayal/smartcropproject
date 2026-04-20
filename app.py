@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 from werkzeug.utils import secure_filename
 from datetime import datetime
-import math
+from disease_data import disease_info
 import cv2
 
 app = Flask(__name__)
@@ -14,13 +14,31 @@ DATABASE = "smartcrop.db"
 UPLOAD_FOLDER = "static/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-ALLOWED_EXTENSIONS = {"png","jpg","jpeg"}
+
+
+# ---------------- NEW FEATURE FUNCTION ----------------
+def enrich_info(info):
+    if not info:
+        return None
+
+    return {
+        **info,
+        "severity_hint": info.get("severity_hint", "Unknown"),
+        "season": info.get("season", "Unknown"),
+        "spread_speed": info.get("spread_speed", "Unknown"),
+        "crop_impact": info.get("crop_impact", "Unknown"),
+        "organic_option": info.get("organic_option", "Not available"),
+        "recovery_time": info.get("recovery_time", "Unknown"),
+        "infected_part": info.get("infected_part", "Unknown"),
+    }
+
 
 # ---------------- DATABASE ----------------
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
+
 
 def create_tables():
     conn = get_db_connection()
@@ -47,12 +65,10 @@ def create_tables():
 
 create_tables()
 
+
 # ---------------- MODEL ----------------
 MODEL_PATH = "plant_disease_model.h5"
-if os.path.exists(MODEL_PATH):
-    model = tf.keras.models.load_model(MODEL_PATH)
-else:
-    model = None
+model = tf.keras.models.load_model(MODEL_PATH) if os.path.exists(MODEL_PATH) else None
 
 class_names = [
 "Apple___Apple_scab","Apple___Black_rot","Apple___Cedar_apple_rust","Apple___healthy",
@@ -73,7 +89,8 @@ class_names = [
 "Tomato___healthy"
 ]
 
-# ---------------- IMAGE PREPROCESS ----------------
+
+# ---------------- IMAGE FUNCTIONS ----------------
 def preprocess_image(path):
     img = cv2.imread(path)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -82,9 +99,8 @@ def preprocess_image(path):
     img = np.expand_dims(img,axis=0)
     return img
 
-# ---------------- BASIC LEAF-LIKE FILTER ----------------
-def is_leaf_like(path):
 
+def is_leaf_like(path):
     img = cv2.imread(path)
     img = cv2.resize(img,(128,128))
 
@@ -95,39 +111,35 @@ def is_leaf_like(path):
 
     mask = cv2.inRange(hsv, lower_green, upper_green)
 
-    green_ratio = np.sum(mask > 0) / mask.size
+    green_ratio = np.sum(mask > 0) / (128*128)
 
-    # agar green bahut kam hai to leaf nahi
-    if green_ratio < 0.15:
-        return False
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    variance = np.var(gray)
 
-    return True
+    if green_ratio > 0.02 and variance > 50:
+        return True
 
-# ---------------- ENTROPY CHECK ----------------
-def  is_valid_prediction(probs, threshold=0.6):
-    probs = np.array(probs)
-    probs = probs / np.sum(probs)
-    entropy = -np.sum(probs * np.log(probs + 1e-10))
-    max_entropy = math.log(len(probs))
-    return (entropy / max_entropy) < threshold
+    return False
+
 
 # ---------------- ROUTES ----------------
 @app.route("/")
 def home():
     return render_template("index.html")
 
+
 @app.route("/logout")
 def logout():
-    session.pop("user", None)
+    session.clear()
     return redirect("/")
 
 
-# -------- User Registration --------
 @app.route("/register", methods=["GET","POST"])
 def register():
     if request.method=="POST":
         username = request.form["username"]
         password = request.form["password"]
+
         conn = get_db_connection()
         try:
             conn.execute("INSERT INTO users (username,password) VALUES (?,?)", (username,password))
@@ -136,15 +148,14 @@ def register():
             conn.close()
             return "Username already exists"
         conn.close()
+
         session["user"] = username
         return redirect("/upload")
+
     return render_template("register.html")
 
-# Admin Login
 
-
-
-# Main Admin Login (works with /admin)
+# ---------------- ADMIN ----------------
 @app.route("/admin", methods=["GET","POST"])
 def admin_login():
     error = None
@@ -175,13 +186,15 @@ def admin_users():
     return render_template("admin_dashboard.html", users=users, uploads=uploads)
 
 
-# Edit user
+# Edit
 @app.route("/admin/edit_user/<int:user_id>", methods=["GET","POST"])
 def edit_user(user_id):
     if not session.get("admin"):
         return redirect("/admin")
+
     conn = get_db_connection()
     user = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+
     if request.method=="POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -189,20 +202,23 @@ def edit_user(user_id):
         conn.commit()
         conn.close()
         return redirect("/admin/users")
+
     conn.close()
     return render_template("admin_edit_user.html", user=user)
 
-# Delete user
+
 @app.route("/admin/delete_user/<int:user_id>")
 def delete_user(user_id):
     if not session.get("admin"):
         return redirect("/admin")
+
     conn = get_db_connection()
     conn.execute("DELETE FROM users WHERE id=?", (user_id,))
     conn.commit()
     conn.close()
     return redirect("/admin/users")
-# Multiple delete users
+
+
 @app.route("/admin/delete_multiple_users", methods=["POST"])
 def delete_multiple_users():
     if not session.get("admin"):
@@ -217,13 +233,14 @@ def delete_multiple_users():
         conn.close()
 
     return redirect("/admin/users")
+
+
 @app.route("/admin/delete_upload/<int:id>")
 def delete_upload(id):
     if not session.get("admin"):
         return redirect("/admin")
 
     conn = get_db_connection()
-
     file = conn.execute("SELECT filename FROM uploads WHERE id=?", (id,)).fetchone()
 
     if file:
@@ -238,7 +255,6 @@ def delete_upload(id):
     return redirect("/admin/users")
 
 
-# ✅ YAHAN PASTE KARO (function ke bahar)
 @app.route("/admin/delete_multiple_uploads", methods=["POST"])
 def delete_multiple_uploads():
     if not session.get("admin"):
@@ -263,77 +279,84 @@ def delete_multiple_uploads():
         conn.close()
 
     return redirect("/admin/users")
-@app.route("/upload",methods=["GET","POST"])
-def upload():
 
+
+# ---------------- UPLOAD ----------------
+@app.route("/upload", methods=["GET","POST"])
+def upload():
 
     if "user" not in session:
         return redirect("/register")
 
-    if request.method=="POST":
+    if request.method == "GET":
+        return render_template("upload.html")
 
-        file=request.files["image"]
+    file = request.files["image"]
 
-        if file.filename=="":
-            return "No file selected"
+    if file.filename == "":
+        return "No file selected"
 
-        filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{secure_filename(file.filename)}"
+    filename = secure_filename(file.filename)
+    path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(path)
 
-        if "." not in filename or filename.split(".")[-1].lower() not in ALLOWED_EXTENSIONS:
-            return "Invalid file type"
-
-        path=os.path.join(app.config["UPLOAD_FOLDER"],filename)
-        file.save(path)
-
-        crop = "Invalid Image"
-        disease = "Not a Crop Leaf"
-        confidence = 0
-
-        # Leaf check
-        if is_leaf_like(path) and model:
-
-            img = preprocess_image(path)
-            probs = model.predict(img)[0]
-
-            if is_valid_prediction(probs, threshold=0.45):
-
-                index = np.argmax(probs)
-                confidence = float(probs[index]) * 100
-
-                # confidence validation
-                if confidence >= 80:
-
-                    predicted_class = class_names[index]
-
-                    if "___" in predicted_class:
-                        crop, disease = predicted_class.split("___",1)
-                    else:
-                        crop = predicted_class
-                        disease = "Unknown"
-
-        # Save upload record
-        conn = get_db_connection()
-        conn.execute(
-            "INSERT INTO uploads (username,filename,crop,disease,confidence,timestamp) VALUES (?,?,?,?,?,?)",
-            (session["user"],filename,crop,disease,round(confidence,2),str(datetime.now()))
-        )
-        conn.commit()
-        conn.close()
-
-        return render_template(
-            "result.html",
-            crop=crop,
-            disease=disease,
-            prevention="Check crop health regularly",
-            treatment="Follow recommended practices",
-            confidence=round(confidence,2),
+    if not is_leaf_like(path):
+        return render_template("result.html",
+            crop="Invalid Image",
+            disease="Not a Leaf",
+            confidence=0,
             image_file=filename
         )
 
-    return render_template("upload.html")
-# ---------------- RUN ----------------
-import os
+    img = preprocess_image(path)
+    probs = model.predict(img)[0]
+
+    index = np.argmax(probs)
+    confidence = float(probs[index]) * 100
+
+    predicted_class = class_names[index]
+    crop, disease = predicted_class.split("___", 1)
+
+    info = disease_info.get(predicted_class, {
+        "prevention": "General monitoring required",
+        "treatment": "Follow agricultural guidelines"
+    })
+
+    info = enrich_info(info)
+
+    conn = get_db_connection()
+    conn.execute("""
+        INSERT INTO uploads (username, filename, crop, disease, confidence, timestamp)
+        VALUES (?,?,?,?,?,?)
+    """, (
+        session["user"],
+        filename,
+        crop,
+        disease,
+        round(confidence,2),
+        datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ))
+    conn.commit()
+    conn.close()
+
+    return render_template("result.html",
+        crop=crop,
+        disease=disease,
+        confidence=round(confidence,2),
+
+        prevention=info.get("prevention"),
+        treatment=info.get("treatment"),
+        severity=info.get("severity_hint"),
+        season=info.get("season"),
+        spread_speed=info.get("spread_speed"),
+        crop_impact=info.get("crop_impact"),
+        organic_option=info.get("organic_option"),
+        recovery_time=info.get("recovery_time"),
+        infected_part=info.get("infected_part"),
+
+        image_file=filename
+    )
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)

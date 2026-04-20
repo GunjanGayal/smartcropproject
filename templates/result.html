@@ -4,15 +4,107 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Prediction Result</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f7f5;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .container {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        width: 60%;
+        margin: auto;
+        box-shadow: 0px 0px 15px rgba(0,0,0,0.1);
+    }
+
+    img {
+        border-radius: 10px;
+        margin: 10px 0;
+    }
+
+    h1 {
+        color: green;
+    }
+
+    .info {
+        text-align: left;
+        margin-top: 20px;
+        padding: 10px;
+    }
+
+    .box {
+        background: #f0f0f0;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 8px;
+    }
+
+    .high {
+        color: red;
+        font-weight: bold;
+    }
+
+    .medium {
+        color: orange;
+        font-weight: bold;
+    }
+
+    .low {
+        color: green;
+        font-weight: bold;
+    }
+
+    a {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 15px;
+        background: green;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+    }
+
+    a:hover {
+        background: darkgreen;
+    }
+</style>
 </head>
+
 <body>
-<h1>🌿<b> Prediction Result</b></h1>
-<img src="{{ url_for('static', filename='uploads/' + image_file) }}" alt="Uploaded Image" width="300">
-<h2>Crop: {{ crop }}</h2>
-<h2>Disease: {{ disease }}</h2>
-<h3>Confidence: {{ confidence }}%</h3>
-<p><strong>Prevention:</strong> {{ prevention }}</p>
-<p><strong>Treatment:</strong> {{ treatment }}</p>
-<a href="/upload">Upload Another Image</a>
+
+<div class="container">
+
+<h1>🌿 Prediction Result</h1>
+
+<img src="{{ url_for('static', filename='uploads/' + image_file) }}" width="250">
+
+<h2>🌱 Crop: {{ crop }}</h2>
+<h2>🦠 Disease: {{ disease }}</h2>
+<h3>📊 Confidence: {{ confidence }}%</h3>
+
+<div class="info">
+
+<div class="box"><strong>Prevention:</strong> {{ prevention }}</div>
+<div class="box"><strong>Treatment:</strong> {{ treatment }}</div>
+
+<div class="box"><strong>🔴 Severity:</strong> {{ severity }}</div>
+<div class="box"><strong>🌦 Season:</strong> {{ season }}</div>
+<div class="box"><strong>⚡ Spread Speed:</strong> {{ spread_speed }}</div>
+<div class="box"><strong>🌾 Crop Impact:</strong> {{ crop_impact }}</div>
+<div class="box"><strong>🌿 Organic Option:</strong> {{ organic_option }}</div>
+<div class="box"><strong>⏳ Recovery Time:</strong> {{ recovery_time }}</div>
+<div class="box"><strong>📍 Infected Part:</strong> {{ infected_part }}</div>
+
+</div>
+
+<a href="/upload">⬅ Upload Another Image</a>
+
+</div>
+
 </body>
 </html>
